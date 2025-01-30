@@ -2,9 +2,30 @@ package main
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 )
+
+func main() {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /", handler)
+
+	srv := http.Server{
+		Addr:         ":4000",
+		Handler:      mux,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
+	slog.Info("starting server", "addr", srv.Addr)
+	if err := srv.ListenAndServe(); err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+}
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	var response struct {
