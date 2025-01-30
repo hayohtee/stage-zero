@@ -13,6 +13,10 @@ func main() {
 
 	mux.HandleFunc("GET /", handler)
 
+	allowedOrigins := []string{"https://stage-zero-o95z.onrender.com", "http://localhost:4000"}
+	allowedMethods := []string{http.MethodGet, http.MethodOptions, http.MethodHead}
+	allowedHeaders := []string{"Content-Type"}
+
 	srv := http.Server{
 		Addr:         ":4000",
 		Handler:      mux,
