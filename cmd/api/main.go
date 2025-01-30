@@ -14,12 +14,10 @@ func main() {
 	mux.HandleFunc("GET /", handler)
 
 	allowedOrigins := []string{"https://stage-zero-o95z.onrender.com", "http://localhost:4000"}
-	allowedMethods := []string{http.MethodGet, http.MethodOptions, http.MethodHead}
-	allowedHeaders := []string{"Content-Type"}
 
 	srv := http.Server{
 		Addr:         ":4000",
-		Handler:      mux,
+		Handler:      enableCORS(mux, allowedOrigins),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
@@ -51,4 +49,29 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(js)
+}
+
+func enableCORS(next http.Handler, allowedOrigins []string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Origins")
+		w.Header().Add("Vary", "Access-Control-Request-Method")
+
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			for _, allowedOrigin := range allowedOrigins {
+				if origin == allowedOrigin {
+					w.Header().Set("Access-Control-Allow-Origin", origin)
+
+					if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+						w.Header().Set("Access-Control-Request-Method", "OPTIONS, PATCH, PUT, DELETE")
+						w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+						w.WriteHeader(http.StatusOK)
+						return
+					}
+					break
+				}
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
